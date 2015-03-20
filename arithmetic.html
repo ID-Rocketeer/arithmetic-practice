@@ -1,0 +1,472 @@
+<!--
+	Arithmetic Practice
+	Version 1.1
+
+	Copyright (c) 2008 Steven P. Collins
+
+	Published under the Gnu General Public License, Version 3.0.
+	For more details see: http://www.gnu.org/licenses/gpl-3.0.html
+
+	Revision History:
+
+	  Version 1.0
+	    - Initial Version
+
+ 	  Version 1.1
+	    - Fixed attempt to reference problems array on the start page.
+-->
+<html>
+  <head>
+    <meta name="author" content="Steven P. Collins"/>
+    <meta name="copyright" content="&copy; 2008 Steven P. Collins"/>
+    <meta name="description" content="A dynamic quiz to test basic arithmetic skills."/>
+    <meta name="version" content="1.1"/>
+    <meta name="license" content="GPL 3.0"/>
+    <meta name="robots" content="noindex, nofollow">
+    <script type="text/javascript">
+      <!--
+	var quizSheet;
+	var classAttribute = "class";
+	var msie = ("Microsoft Internet Explorer" == navigator.appName);
+
+	if (msie) {
+	  classAttribute = "className";
+	}
+
+	//======================================================================
+	// Class Problem
+
+	// Problem constructor
+	function Problem (quizSheet, parent, width, name) {
+	  var aDiv;
+	  var operand1;
+	  var operand2;
+
+	  if (quizSheet && parent) {
+	    var doc = quizSheet.getDoc ();
+	    this.id = name;
+	    this.minArg = quizSheet.getMinArg ();
+	    this.maxArg = quizSheet.getMaxArg ();
+
+	    do {
+	      switch (quizSheet.getOperator ()) {
+	      case "+":
+		operand1 = this.randomOperand ();
+		operand2 = this.randomOperand ();
+		this.answer = operand1 + operand2;
+		break;
+
+	      case "-":
+		this.answer = this.randomOperand ();
+		operand2 = this.randomOperand ();
+		operand1 = this.answer + operand2;
+		break;
+
+	      case "\u00D7":	// multiplication
+		operand1 = this.randomOperand ();
+		operand2 = this.randomOperand ();
+		this.answer = operand1 * operand2;
+		break;
+
+	      case "\u00F7":	// division
+		this.answer = this.randomOperand ();
+		operand2 = this.randomOperand ();
+		operand1 = this.answer * operand2;
+		break;
+	      }
+	    } while (! quizSheet.isUniqueProblem (operand1 + quizSheet.getOperator () + operand2));
+
+	    var cell = parent.insertCell (0);
+	    cell.setAttribute ("width", width);
+
+	    // div for the operand1
+	    aDiv = doc.createElement ("div");
+	    cell.appendChild (aDiv);
+	    aDiv.appendChild (doc.createTextNode ("" + operand1));
+
+	    // div for the operand2
+	    aDiv = doc.createElement ("div");
+	    cell.appendChild (aDiv);
+	    aDiv.appendChild (doc.createTextNode (quizSheet.getOperator () + " " + operand2));
+
+	    // div for the answer
+	    aDiv = doc.createElement ("div");
+	    aDiv.setAttribute (classAttribute, "answer");
+	    cell.appendChild (aDiv);
+	    this.inputText = doc.createElement ("input");
+	    this.inputText.setAttribute ("type", "text");
+	    this.inputText.setAttribute ("size", "2");
+	    this.inputText.setAttribute ("maxlength", quizSheet.getMaxDigits ());
+	    this.inputText.setAttribute ("id", name);
+	    this.inputText.onchange = QuizSheet.checkProblem;
+	    this.inputText.onblur = QuizSheet.disableSavedProblem;
+	    this.inputText.onkeypress = QuizSheet.interceptEnterKey;
+	    aDiv.appendChild (this.inputText);
+	  }
+	}
+
+	// Create a throw-away instance of Problem for javascript 1.1
+	new Problem (null, null, "0%", "unnamed");
+
+	//----------------------------------------------------------------------
+	// Instance methods for class QuizSheet
+
+	// Generates an operand between the min and max, inclusive.
+	Problem.prototype.randomOperand = function () {
+	  return Math.floor (Math.random () * (this.maxArg - this.minArg + 1) + this.minArg);
+	}
+
+	// Verify that the problem has been answered with only 1 or more digits
+	Problem.prototype.hasValidInput = function () {
+	  var pattern = /^[0-9]+$/;
+	  return pattern.exec (this.inputText.value);
+	}
+
+	// Checks that the student's answer matches the computed answer and
+	// provides appropriate feedback on the field.
+	Problem.prototype.checkAnswer = function () {
+	  var result = (this.answer == this.inputText.value);
+
+	  if (result) {
+	    this.inputText.setAttribute (classAttribute,  "pass");
+	  } else {
+	    this.inputText.setAttribute (classAttribute,  "fail");
+	  }
+
+	  return result;
+	}
+
+	// Prevents the problem from being reanswered.
+	Problem.prototype.disableInput = function () {
+	  this.inputText.setAttribute ("disabled", "true");
+	}
+
+	// Sets the browser input focus to the field for this problem.
+	Problem.prototype.focus = function () {
+	  this.inputText.focus ();
+	}
+
+	//================================================================
+	// Class QuizSheet
+
+	// QuizSheet constructor
+	function QuizSheet (doc) {
+	  if (doc) {
+
+	    // Start loading the GPL image first to improve performance.
+	    var licenseLogoImage = doc.createElement ("img");
+	    licenseLogoImage.setAttribute ("src", "http://www.gnu.org/graphics/gplv3-88x31.png");
+	    licenseLogoImage.setAttribute (classAttribute, "licenseLogo");
+	    var application = doc.createElement ("div");
+	    application.setAttribute (classAttribute, "footer");
+	    application.appendChild (doc.createTextNode ("Arithmetic Practice, Version: 1.1"));
+	    var copyright = doc.createElement ("div");
+	    copyright.setAttribute (classAttribute, "footer");
+	    copyright.appendChild (doc.createTextNode ("Copyright \u00A9 2008 Steven P. Collins"));
+	    var license = doc.createElement ("div");
+	    license.setAttribute (classAttribute, "footer");
+	    license.appendChild (doc.createTextNode ("License: "));
+	    var licenseLogoDiv = doc.createElement ("div");
+	    licenseLogoDiv.appendChild (licenseLogoImage);
+	    var anchor = doc.createElement ("a");
+	    anchor.setAttribute ("href", "http://www.gnu.org/licenses/gpl-3.0.html");
+	    anchor.appendChild (doc.createTextNode ("GPL 3.0"));
+	    anchor.appendChild (licenseLogoDiv);
+	    license.appendChild (anchor);
+
+	    var parameter = /\?p=((addit|subtract|multiplicat|divis)ion)$/.exec (window.location);
+	    var paragraph = doc.createElement ("p");
+	    var form;
+	    var row;
+	    var col;
+
+	    if (parameter) {
+	      switch (parameter[1]) {
+	      case "addition":
+		doc.title = "Addition Magician!";
+		this.operator = "+";
+		this.minArg = 0;
+		this.maxArg = 9;
+		this.maxDigits = 2;
+		form = doc.createElement ("form");
+		break;
+
+	      case "subtraction":
+		doc.title = "Subtraction Action!";
+		this.operator = "-";
+		this.minArg = 0;
+		this.maxArg = 9;
+		this.maxDigits = 2;
+		form = doc.createElement ("form");
+		break;
+
+	      case "multiplication":
+		doc.title = "Defying Multiplying!";
+		this.operator = "\u00D7";
+		this.minArg = 1;
+		this.maxArg = 12;
+		this.maxDigits = 3;
+		form = doc.createElement ("form");
+		break;
+
+	      case "division":
+		doc.title = "Division Decision!";
+		this.operator = "\u00F7";
+		this.minArg = 1;
+		this.maxArg = 12;
+		this.maxDigits = 3;
+		form = doc.createElement ("form");
+		break;
+	      }
+
+	      if (form) {
+		paragraph.appendChild (form);
+	      }
+
+	    } else {
+	      doc.title = "Arithmetic Practice";
+	      paragraph.appendChild (doc.createTextNode ("Try your hand at "));
+	      var anchor = doc.createElement ("a");
+	      anchor.setAttribute ("href", "?p=addition");
+	      anchor.appendChild (doc.createTextNode ("Addition Magician"));
+	      paragraph.appendChild (anchor);
+	      paragraph.appendChild (doc.createTextNode (", "));
+	      anchor = doc.createElement ("a");
+	      anchor.setAttribute ("href", "?p=subtraction");
+	      anchor.appendChild (doc.createTextNode ("Subtraction Action"));
+	      paragraph.appendChild (anchor);
+	      paragraph.appendChild (doc.createTextNode (", "));
+	      anchor = doc.createElement ("a");
+	      anchor.setAttribute ("href", "?p=multiplication");
+	      anchor.appendChild (doc.createTextNode ("Defying Multiplying"));
+	      paragraph.appendChild (anchor);
+	      paragraph.appendChild (doc.createTextNode (", or "));
+	      anchor = doc.createElement ("a");
+	      anchor.setAttribute ("href", "?p=division");
+	      anchor.appendChild (doc.createTextNode ("Division Decision"));
+	      paragraph.appendChild (anchor);
+	      paragraph.appendChild (doc.createTextNode ("."));
+	    }
+
+	    this.header = doc.createElement ("h1");
+	    this.header.appendChild (doc.createTextNode (doc.title));
+	    doc.body.appendChild (this.header);
+	    doc.body.appendChild (paragraph);
+
+	    if (form) {
+	      this.rows = (this.maxArg - this.minArg) + 1;
+	      this.cols = this.rows;
+	      this.usedProblems = new Array ();
+	      this.problems = new Array (this.rows * this.cols);
+	      this.countOfCorrectAnswers = 0;
+	      this.countOfProblemsAnswered = 0;
+	      this.problemCount = this.rows * this.cols;
+	      this.doc = doc;
+	      this.savedProblem = null;
+
+	      form.setAttribute ("action", "");
+	      var table = doc.createElement ("table");
+	      table.setAttribute ("width", "100%");
+
+	      form.appendChild (table);
+
+	      var tbody = doc.createElement ("tbody");
+	      table.appendChild (tbody);
+
+	      var width = Math.floor (100 / this.cols) + "%";
+
+	      for (row = this.rows; row--; ) {
+		var tr = table.insertRow (0);
+
+		for (col = this.cols; col--; ) {
+		  var id = "r" + row + "c" + col;
+		  this.problems[ id ] = new Problem (this, tr, width, id);
+		}
+	      }
+	    }
+
+	    doc.body.appendChild (application);
+	    doc.body.appendChild (copyright);
+	    doc.body.appendChild (license);
+
+	    if (this.problems && this.problems["r0c0"]) {
+	      this.problems["r0c0"].focus ();
+	      this.timeout = setTimeout ("quizSheet.scorePage ();", 300000);
+	    }
+	  }
+	}
+
+	//----------------------------------------------------------------------
+	// Class methods for class QuizSheet
+
+	// Disables the last completed problem (if any) on the quiz.
+	QuizSheet.disableSavedProblem = function () {
+	  quizSheet.disableSavedProblem ();
+	}
+
+	// Checks if the current problem is complete and correct.
+	QuizSheet.checkProblem = function (eventObject) {
+	  // Get the id of the field the event happened on.
+	  var id;
+
+	  if (! eventObject) {
+	    id = window.event.srcElement.id;
+	  } else {
+	    id = eventObject.currentTarget.id;
+	  }
+
+	  quizSheet.checkProblem (id);
+	}
+
+	// Prevents form from being sent to the server.
+	QuizSheet.interceptEnterKey = function (eventObject) {
+	  return 13 != (eventObject ? eventObject.which /* standards compliant */ : window.event.keyCode /* MSIE */);
+	}
+
+	//----------------------------------------------------------------------
+	// Instance methods for class QuizSheet
+
+	// Create a throw-away instance of QuizSheet for javascript 1.1
+	new QuizSheet (null);
+
+	// Returns the DOM document the quiz is realized on.
+	QuizSheet.prototype.getDoc = function () {
+	  return this.doc;
+	}
+
+	// getters for quizSheet attributes
+	QuizSheet.prototype.getMinArg = function () {
+	  return this.minArg;
+	}
+
+	QuizSheet.prototype.getMaxArg = function () {
+	  return this.maxArg;
+	}
+
+	QuizSheet.prototype.getMaxDigits = function () {
+	  return this.maxDigits;
+	}
+
+	QuizSheet.prototype.getOperator = function () {
+	  return this.operator;
+	}
+
+	// Tests if the named problem has already been placed on the quiz.
+	QuizSheet.prototype.isUniqueProblem = function (problemName) {
+	  var present = this.usedProblems[ problemName ];
+	  this.usedProblems[ problemName ] = true;
+	  return ! present;
+	}
+
+	// Disables the last completed problem (if any) on this quiz.
+	QuizSheet.prototype.disableSavedProblem = function () {
+	  if (this.savedProblem) {
+	    this.savedProblem.disableInput ();
+	    this.savedProblem = null;
+	  }
+	}
+
+	// Checks if the current problem on this quiz is complete and correct.
+	QuizSheet.prototype.checkProblem = function (id) {
+	  problem = this.problems[ id ];
+
+	  if (problem.hasValidInput ()) {
+	    this.savedProblem = problem;
+	    ++this.countOfProblemsAnswered;
+
+	    if (problem.checkAnswer ()) {
+	      ++this.countOfCorrectAnswers;
+	    }
+
+	    if (this.countOfProblemsAnswered == this.problemCount) {
+	      this.scorePage ();
+	    }
+	  }
+	}
+
+	// Disables all fields on the quiz and provides performance feedback
+	// based on the total number of correct answers on the quiz.
+	QuizSheet.prototype.scorePage = function () {
+	  var row;
+	  var col;
+
+	  clearTimeout (this.timeout);
+
+	  for (row = this.rows; row--; ) {
+	    for (col = this.cols; col--; ) {
+	      var problem = this.problems[ "r" + row + "c" + col ]
+	      problem.disableInput ();
+	    }
+	  }
+
+	  if (this.countOfCorrectAnswers >= parseInt (.75 * this.problemCount)) {
+	    this.header.setAttribute (classAttribute, "pass");
+	    alert ("Congratulations! You got " + this.countOfCorrectAnswers + " correct answers in the allowed time.");
+	  } else {
+	    this.header.setAttribute (classAttribute, "fail");
+	    alert ("I'm sorry. You only got " + this.countOfCorrectAnswers + " correct answers in the allowed time.");
+	  }
+	}
+
+	//======================================================================
+	// onload handler function
+
+	function createTable () {
+	  quizSheet = new QuizSheet (document);
+	}
+
+	// Cause the table to be created programatically.
+	window.onload = createTable;
+      -->
+    </script>
+    <style type="text/css">
+      <!--
+	h1 {
+	  font-style: italic;
+	  text-align: center;
+	  padding: 5px;
+	}
+	p {
+	  text-align: center;
+	}
+	a {
+	  outline: none;
+	}
+	table {
+	  text-align: right;
+	  border-collapse: collapse;
+	}
+	input {
+	  text-align: right;
+	}
+	td {
+	  padding: 5px;
+	  border-color: white;
+	  border-width: thick;
+	  border-style: solid;
+	  background-color: #E0E0FF;
+	}
+	.pass {
+	  background-color: #80FF80;
+	}
+	.fail {
+	  background-color: #FF8080;
+	}
+	.answer {
+	  border-top: thin solid;
+	}
+	.licenseLogo {
+	  padding: 5px;
+	  border-width: 0px;
+	  border-style: none;
+	}
+	.footer {
+	  font-size: 75%;
+	  text-align: center;
+	  background-color: white;
+	}
+      -->
+    </style>
+  </head>
+  <body/>
+</html>
